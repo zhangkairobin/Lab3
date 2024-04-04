@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tip Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <form id="tipCalculatorForm">
+        <h2>ITMD 541-Lab3 - KaiZhang</h2>
+        <label for="billTotal">Tip Calculator:</label><br>
+        <label for="billTotal">Bill Total:</label>
+        <input type="text" id="billTotal" name="billTotal" required><br>
+
+        <label for="tipSlider">Tip:</label>
+        <input type="range" id="tipSlider" name="tipSlider" min="0" max="100" value="0"><br>
+
+        <label for="tipPercentage">Tip Percentage:</label>
+        <input type="text" id="tipPercentage" name="tipPercentage" disabled><br>
+
+        <label for="tipAmount">Tip Amount:</label>
+        <input type="text" id="tipAmount" name="tipAmount" disabled><br>
+
+        <label for="totalBillWithTip">Total Bill with Tip:</label>
+        <input type="text" id="totalBillWithTip" name="totalBillWithTip" disabled><br>
+
+        <input type="submit" value="Calculate Tip">
+    </form>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
