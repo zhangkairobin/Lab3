@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阿里云工单分析看板 - 产品故障专项</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#f0f2f5;color:#333}
+.header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);color:#fff;padding:24px 32px}
+.header h1{font-size:22px;font-weight:600}
+.header .sub{font-size:13px;color:#94a3b8;margin-top:4px}
+.dash{max-width:1400px;margin:0 auto;padding:24px}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px}
+.kpi{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.08);position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi:nth-child(1)::before{background:#3b82f6}.kpi:nth-child(2)::before{background:#ef4444}.kpi:nth-child(3)::before{background:#f59e0b}.kpi:nth-child(4)::before{background:#10b981}.kpi:nth-child(5)::before{background:#8b5cf6}
+.kpi-l{font-size:13px;color:#6b7280;margin-bottom:8px}
+.kpi-v{font-size:32px;font-weight:700}
+.kpi:nth-child(1) .kpi-v{color:#3b82f6}.kpi:nth-child(2) .kpi-v{color:#ef4444}.kpi:nth-child(3) .kpi-v{color:#f59e0b}.kpi:nth-child(4) .kpi-v{color:#10b981}.kpi:nth-child(5) .kpi-v{color:#8b5cf6}
+.kpi-d{font-size:12px;color:#9ca3af;margin-top:4px}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.card-t{font-size:15px;font-weight:600;margin-bottom:16px;color:#1f2937}
+.bar-c{display:flex;flex-direction:column;gap:10px}
+.bar-i{display:flex;align-items:center;gap:12px}
+.bar-l{width:110px;font-size:13px;text-align:right;color:#4b5563;flex-shrink:0}
+.bar-tr{flex:1;height:28px;background:#f3f4f6;border-radius:6px;overflow:hidden}
+.bar-f{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:12px;color:#fff;font-weight:600;min-width:30px}
+.bar-n{width:36px;text-align:right;font-size:13px;font-weight:600;color:#374151;flex-shrink:0}
+.ty-c{display:flex;flex-direction:column;gap:8px}
+.ty-i{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f9fafb;border-radius:8px}
+.ty-ic{font-size:18px}.ty-nm{font-size:13px;color:#4b5563;flex:1}.ty-ct{font-size:14px;font-weight:600;color:#1f2937}.ty-p{font-size:12px;color:#9ca3af;width:40px;text-align:right}
+.tabs{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
+.tab-h{display:flex;border-bottom:1px solid #e5e7eb;padding:0 20px}
+.tab-b{padding:14px 20px;font-size:14px;color:#6b7280;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent}
+.tab-b:hover{color:#3b82f6}.tab-b.on{color:#3b82f6;border-bottom-color:#3b82f6;font-weight:600}
+.tc{display:none}.tc.on{display:block}
+.fb{display:flex;gap:12px;padding:16px 20px;border-bottom:1px solid #f3f4f6;align-items:center;flex-wrap:wrap}
+.fb label{font-size:13px;color:#6b7280}
+.fb select,.fb input{padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;outline:none}
+.fb select:focus,.fb input:focus{border-color:#3b82f6}
+.fb input[type=text]{width:240px}
+.btn-r{padding:6px 14px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;font-size:13px;cursor:pointer;color:#4b5563}
+.btn-r:hover{background:#e5e7eb}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:#f9fafb;padding:10px 14px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;white-space:nowrap;position:sticky;top:0}
+tbody td{padding:10px 14px;border-bottom:1px solid #f3f4f6;vertical-align:top}
+tbody tr:hover{background:#f0f7ff}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.t-r{background:#fef2f2;color:#dc2626}.t-o{background:#fff7ed;color:#ea580c}.t-b{background:#eff6ff;color:#2563eb}.t-g{background:#f0fdf4;color:#16a34a}.t-p{background:#faf5ff;color:#9333ea}.t-gr{background:#f3f4f6;color:#6b7280}.t-pk{background:#fdf2f8;color:#db2777}.t-tl{background:#f0fdfa;color:#0d9488}
+.td-s{max-width:350px;line-height:1.5}
+.pg{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1px solid #e5e7eb;font-size:13px;color:#6b7280}
+.pg-bs{display:flex;gap:4px}
+.pg-b{padding:4px 10px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;font-size:12px}
+.pg-b:hover{background:#f3f4f6}.pg-b.on{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.tl{padding:20px}.tl-m{margin-bottom:20px}
+.tl-mt{font-size:14px;font-weight:600;color:#1f2937;margin-bottom:10px;padding-left:12px;border-left:3px solid #3b82f6}
+.tl-is{display:flex;flex-direction:column;gap:6px}
+.tl-i{display:flex;gap:12px;padding:8px 12px;background:#f9fafb;border-radius:8px;font-size:13px;align-items:flex-start}
+.tl-d{color:#6b7280;white-space:nowrap;width:80px;flex-shrink:0}
+.tl-p{flex-shrink:0}.tl-ds{color:#374151;flex:1}
+.ft{text-align:center;padding:24px;font-size:12px;color:#9ca3af}
+@media(max-width:768px){.kpi-row{grid-template-columns:repeat(2,1fr)}.charts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>📊 阿里云工单分析看板 — 产品故障专项分析</h1>
+<div class="sub">数据范围：2025-07-17 ~ 2026-04-10 | 共 477 条工单 | 分析时间：2026-04-10</div>
+</div>
+<div class="dash">
+<div class="kpi-row">
+<div class="kpi"><div class="kpi-l">工单总数</div><div class="kpi-v">477</div><div class="kpi-d">统计周期内全部已完成工单</div></div>
+<div class="kpi"><div class="kpi-l">产品故障工单</div><div class="kpi-v">52</div><div class="kpi-d">阿里云产品自身问题导致</div></div>
+<div class="kpi"><div class="kpi-l">产品故障占比</div><div class="kpi-v">10.9%</div><div class="kpi-d">故障工单 / 总工单</div></div>
+<div class="kpi"><div class="kpi-l">涉及产品数</div><div class="kpi-v">8</div><div class="kpi-d">Holo/DW/MC/DI/Spark等</div></div>
+<div class="kpi"><div class="kpi-l">平均处理时长</div><div class="kpi-v">7.2d</div><div class="kpi-d">故障工单平均解决天数</div></div>
+</div>
+<div class="charts">
+<div class="card">
+<div class="card-t">🏷️ 故障工单按产品分布</div>
+<div class="bar-c">
+<div class="bar-i"><div class="bar-l">DataWorks</div><div class="bar-tr"><div class="bar-f" style="width:100%;background:#3b82f6">18</div></div><div class="bar-n">18</div></div>
+<div class="bar-i"><div class="bar-l">Hologres</div><div class="bar-tr"><div class="bar-f" style="width:61%;background:#ef4444">11</div></div><div class="bar-n">11</div></div>
+<div class="bar-i"><div class="bar-l">数据集成(DI)</div><div class="bar-tr"><div class="bar-f" style="width:44%;background:#f59e0b">8</div></div><div class="bar-n">8</div></div>
+<div class="bar-i"><div class="bar-l">MaxCompute</div><div class="bar-tr"><div class="bar-f" style="width:39%;background:#10b981">7</div></div><div class="bar-n">7</div></div>
+<div class="bar-i"><div class="bar-l">Spark</div><div class="bar-tr"><div class="bar-f" style="width:11%;background:#8b5cf6">2</div></div><div class="bar-n">2</div></div>
+<div class="bar-i"><div class="bar-l">PAI</div><div class="bar-tr"><div class="bar-f" style="width:6%;background:#ec4899">1</div></div><div class="bar-n">1</div></div>
+<div class="bar-i"><div class="bar-l">OSS</div><div class="bar-tr"><div class="bar-f" style="width:6%;background:#14b8a6">1</div></div><div class="bar-n">1</div></div>
+<div class="bar-i"><div class="bar-l">DLF/SDK</div><div class="bar-tr"><div class="bar-f" style="width:6%;background:#6366f1">1</div></div><div class="bar-n">1</div></div>
+<div class="bar-i"><div class="bar-l">其他</div><div class="bar-tr"><div class="bar-f" style="width:17%;background:#9ca3af">3</div></div><div class="bar-n">3</div></div>
+</div></div>
+<div class="card">
+<div class="card-t">🔍 故障类型分布</div>
+<div class="ty-c">
+<div class="ty-i"><div class="ty-ic">💥</div><div class="ty-nm">服务异常/重启/中断</div><div class="ty-ct">14</div><div class="ty-p">27%</div></div>
+<div class="ty-i"><div class="ty-ic">🐛</div><div class="ty-nm">产品Bug(空指针/缓存/解析)</div><div class="ty-ct">13</div><div class="ty-p">25%</div></div>
+<div class="ty-i"><div class="ty-ic">⚠️</div><div class="ty-nm">功能缺陷/不兼容</div><div class="ty-ct">9</div><div class="ty-p">17%</div></div>
+<div class="ty-i"><div class="ty-ic">🔄</div><div class="ty-nm">版本升级引入问题</div><div class="ty-ct">6</div><div class="ty-p">12%</div></div>
+<div class="ty-i"><div class="ty-ic">📢</div><div class="ty-nm">告警/监控功能异常</div><div class="ty-ct">5</div><div class="ty-p">10%</div></div>
+<div class="ty-i"><div class="ty-ic">🖥️</div><div class="ty-nm">前端/UI显示问题</div><div class="ty-ct">5</div><div class="ty-p">10%</div></div>
+</div></div>
+</div>
+<div class="tabs">
+<div class="tab-h">
+<button class="tab-b on" onclick="stab('d')">📋 故障工单明细 (52条)</button>
+<button class="tab-b" onclick="stab('t')">📅 时间线视图</button>
+</div>
+<div id="td" class="tc on">
+<div class="fb">
+<label>产品：</label>
+<select id="fp" onchange="ft()"><option value="">全部</option><option>DataWorks</option><option>Hologres</option><option>数据集成</option><option>MaxCompute</option><option>Spark</option><option>PAI</option><option>OSS</option><option>其他</option></select>
+<label>类型：</label>
+<select id="fty" onchange="ft()"><option value="">全部</option><option>服务异常</option><option>产品Bug</option><option>功能缺陷</option><option>版本升级</option><option>告警异常</option><option>UI问题</option></select>
+<label>搜索：</label>
+<input type="text" id="fs" placeholder="工单号或关键词..." oninput="ft()">
+<button class="btn-r" onclick="rf()">重置</button>
+</div>
+<div class="tw"><table><thead><tr><th>#</th><th>工单号</th><th>产品</th><th>故障类型</th><th>创建时间</th><th>创建人</th><th>问题描述</th><th>根因 & 解决方案</th></tr></thead><tbody id="tb"></tbody></table></div>
+<div class="pg"><span id="pi"></span><div class="pg-bs" id="pb"></div></div>
+</div>
+<div id="tt" class="tc">
+<div class="tl" id="tlc"></div>
+</div>
+</div>
+</div>
+<div class="ft">数据中台 · 阿里云工单分析看板 · 由 Kiro 自动生成 · 2026-04-10</div>
+<script>
+
+const D=[
+{i:1,e:"E260326754UBC0",p:"Hologres",t:"服务异常",d:"2026-03-26",c:"盛慧琳",ds:"Holo shard报错，workers不健康",s:"机器异常导致worker节点重启"},
+{i:2,e:"E2603203E4YJT7",p:"Hologres",t:"产品Bug",d:"2026-03-20",c:"盛慧琳",ds:"Hologres凌晨多个insert任务失败",s:"偶发coredump（已确认为低优bug）"},
+{i:3,e:"E2602015H424TH",p:"Hologres",t:"服务异常",d:"2026-02-01",c:"盛慧琳",ds:"Hologres shards incomplete接口告警",s:"CPU负载100%导致Worker节点异常重启"},
+{i:4,e:"E251222EN3XN9M",p:"Hologres",t:"产品Bug",d:"2025-12-22",c:"盛慧琳",ds:"Hologres查询失败ERPC_ERROR_CONNECTION_CLOSED",s:"odps表字段对不齐导致Coredump，需升级3.2.22修复"},
+{i:5,e:"E251124273UKP8",p:"Hologres",t:"产品Bug",d:"2025-11-24",c:"夏卫涛",ds:"HOLO mc外表没有引入数据",s:"Append2.0数据文件分片cache实现有问题"},
+{i:6,e:"E2511048P477XF",p:"Hologres",t:"产品Bug",d:"2025-11-04",c:"王袁辰",ds:"holo查询外表报错internal error",s:"MC bug导致Odps表扫描拆分错误"},
+{i:7,e:"E251003273NZ98",p:"Hologres",t:"服务异常",d:"2025-10-03",c:"左孝先",ds:"serverless模式频繁ERPC_ERROR_CONNECTION_CLOSED",s:"serverless worker内存未管控住导致OOM"},
+{i:8,e:"E2509094H4D8NU",p:"Hologres",t:"服务异常",d:"2025-09-09",c:"左孝先",ds:"hologres 503错误",s:"服务重启导致503"},
+{i:9,e:"E250906CG3J8BM",p:"Hologres",t:"服务异常",d:"2025-09-06",c:"王春生",ds:"hologres调度脚本执行报错，实例频繁重启",s:"实例频繁重启和OOM"},
+{i:10,e:"E2508262P3KCER",p:"Hologres",t:"产品Bug",d:"2025-08-26",c:"左孝先",ds:"hologres oss外表报错字段类型解析问题",s:"已在最新版本修复"},
+{i:11,e:"E2509106U3JJEF",p:"Hologres",t:"功能缺陷",d:"2025-09-10",c:"左孝先",ds:"hologres自动路由失效",s:"INSERT OVERWRITE与DML自动路由不兼容"},
+{i:12,e:"E260123GN4F75A",p:"DataWorks",t:"版本升级",d:"2026-01-23",c:"孙川",ds:"dataworks定时突然失效，晚上没有运行调度",s:"调度系统升级触发数据兼容问题"},
+{i:13,e:"E251227754KU50",p:"DataWorks",t:"UI问题",d:"2025-12-27",c:"吕磊磊",ds:"工作流版本查看左侧代码目录不跟随版本切换刷新",s:"前端bug，已提需求"},
+{i:14,e:"E251118B73Y6E3",p:"DataWorks",t:"服务异常",d:"2025-11-18",c:"左孝先",ds:"dataworks超时报错，数据开发模块异常",s:"北京地域DataWorks数据开发模块异常，已恢复"},
+{i:15,e:"E2512056U3TN7F",p:"DataWorks",t:"产品Bug",d:"2025-12-05",c:"夏卫涛",ds:"pyODPS在调度配置中无法加载出参数",s:"新版pyodps3节点存在缺陷"},
+{i:16,e:"E250916AE3U0P3",p:"DataWorks",t:"产品Bug",d:"2025-09-16",c:"左孝先",ds:"dataworks SSH节点卡住",s:"已知问题，新版fix"},
+{i:17,e:"E2509067M492EG",p:"DataWorks",t:"版本升级",d:"2025-09-06",c:"左孝先",ds:"dataworks workflow全量发布超时",s:"9.3封网导致平台功能发布推迟"},
+{i:18,e:"E25090675492E0",p:"DataWorks",t:"告警异常",d:"2025-09-06",c:"左孝先",ds:"Dataworks webhook告警失败",s:"产品问题，已修复"},
+{i:19,e:"E250820DA3R55N",p:"DataWorks",t:"UI问题",d:"2025-08-20",c:"左孝先",ds:"运维中心分组显示数量不对",s:"已提交bug优化"},
+{i:20,e:"E251023AE3Y4F3",p:"DataWorks",t:"UI问题",d:"2025-10-23",c:"左孝先",ds:"运维中心筛选显示不对",s:"研发团队将优化"},
+{i:21,e:"E2510213Y4GP4P",p:"DataWorks",t:"功能缺陷",d:"2025-10-21",c:"左孝先",ds:"组件节点引用记录无法查看",s:"后台已优化"},
+{i:22,e:"E251022DT3XM26",p:"DataWorks",t:"产品Bug",d:"2025-10-22",c:"左孝先",ds:"发布中心发布成功但工作流未被修改",s:"发布中心报错提示有问题显示成功（误导性bug）"},
+{i:23,e:"E251013BP3TNAK",p:"DataWorks",t:"产品Bug",d:"2025-10-13",c:"左孝先",ds:"跨空间发布显示成功但无任务",s:"删除重建同名空间导致缓存问题"},
+{i:24,e:"E2510138P452SF",p:"DataWorks",t:"产品Bug",d:"2025-10-13",c:"左孝先",ds:"新版数据开发工作流删除超时",s:"已反馈后端团队修复"},
+{i:25,e:"E2511212P3UEBR",p:"DataWorks",t:"产品Bug",d:"2025-11-21",c:"夏卫涛",ds:"工作流跨空间发布失败mapping spec error",s:"跨空间发布异常已修复"},
+{i:26,e:"E260105273ZRP8",p:"DataWorks",t:"产品Bug",d:"2026-01-05",c:"夏卫涛",ds:"跨空间发布失败主键重复",s:"删除节点操作未完全生效，已修复"},
+{i:27,e:"E251106F248FNF",p:"DataWorks",t:"产品Bug",d:"2025-11-06",c:"王袁辰",ds:"测试环境数据质量获取不到字段信息",s:"后端服务存在问题，已修复"},
+{i:28,e:"E25081975476L0",p:"DataWorks",t:"产品Bug",d:"2025-08-19",c:"左孝先",ds:"通过API创建的任务搜索不到",s:"后端已计划修复"},
+{i:29,e:"E250812E63H1L5",p:"DataWorks",t:"服务异常",d:"2025-08-12",c:"左孝先",ds:"dataworks登录不了",s:"联通封禁域名导致服务不可用"},
+{i:30,e:"E260129GN4FRMA",p:"MaxCompute",t:"服务异常",d:"2026-01-29",c:"盛慧琳",ds:"MaxCompute查询报错ShuffleServiceError",s:"下线机器引起的状态不一致"},
+{i:31,e:"E2511135H3T7WH",p:"MaxCompute",t:"服务异常",d:"2025-11-13",c:"张凯",ds:"多个数据同步任务NullPointerException",s:"北京region MC共享Tunnel集群单节点异常"},
+{i:32,e:"E251001AE3WLA3",p:"MaxCompute",t:"产品Bug",d:"2025-10-01",c:"左孝先",ds:"UDF返回Date类型显示异常",s:"UDF线上解析有问题，本地测试正常"},
+{i:33,e:"E251013754C0F0",p:"MaxCompute",t:"产品Bug",d:"2025-10-13",c:"左孝先",ds:"Spark Fetch chunk failed",s:"低概率已知问题"},
+{i:34,e:"E251007513NJJ1",p:"MaxCompute",t:"功能缺陷",d:"2025-10-07",c:"左孝先",ds:"online模式回退offline仅分配一个instance",s:"执行计划选择问题"},
+{i:35,e:"E250919G643B8T",p:"MaxCompute",t:"产品Bug",d:"2025-09-19",c:"左孝先",ds:"oss parquet外表时区问题TIMESTAMP_NTZ不一致",s:"产品bug"},
+{i:36,e:"E251013AY3X56K",p:"MaxCompute",t:"服务异常",d:"2025-10-13",c:"左孝先",ds:"maxcompute spark超时，链路节点unhealthy",s:"旧网络架构问题，已调整为新架构"},
+{i:37,e:"E2603034H4X0KU",p:"数据集成",t:"版本升级",d:"2026-03-03",c:"张凯",ds:"实时同步RuntimeException: Condition delegate has init",s:"需升级最新版任务"},
+{i:38,e:"E251124AE41833",p:"数据集成",t:"产品Bug",d:"2025-11-24",c:"张凯",ds:"数据集成NullPointerException",s:"部分场景未被自动重试逻辑覆盖"},
+{i:39,e:"E2510081H4FGPZ",p:"数据集成",t:"产品Bug",d:"2025-10-08",c:"张凯",ds:"Tunnel请求缺少有效STS授权令牌",s:"后端sts ak轮转问题，已修改"},
+{i:40,e:"E250926C03LBG5",p:"数据集成",t:"产品Bug",d:"2025-09-26",c:"张凯",ds:"ODPS Tunnel UpsertStream缺少ststoken",s:"临时ak中断"},
+{i:41,e:"E2509095H3L92H",p:"数据集成",t:"产品Bug",d:"2025-09-09",c:"左孝先",ds:"数据集成tunnel异常ststoken无效",s:"sts过期导致failover，后端会优化"},
+{i:42,e:"E251027GN466BA",p:"数据集成",t:"产品Bug",d:"2025-10-27",c:"张凯",ds:"CDC创建MC Upsert Session返回null",s:"程序初始化对象为null"},
+{i:43,e:"E2510115H3NX3H",p:"数据集成",t:"产品Bug",d:"2025-10-11",c:"左孝先",ds:"es数据集成写入删除索引失败任务不退出",s:"已提交aone修复"},
+{i:44,e:"E251226CG3WX3M",p:"数据集成",t:"告警异常",d:"2025-12-26",c:"张凯",ds:"数据集成报警异常，failover期间误报",s:"心跳监听时间需调大"},
+{i:45,e:"E260106754LJD0",p:"PAI",t:"产品Bug",d:"2026-01-06",c:"李军辉",ds:"PAI Designer组件镜像缺少libgeos_c.so",s:"designer组件已修复发布"},
+{i:46,e:"E2603046B4294Z",p:"OSS",t:"服务异常",d:"2026-03-04",c:"张鹏",ds:"sparksql读取OSS数据延时超时",s:"OSS bucket大量DeleteMarker导致超时"},
+{i:47,e:"E25080775464X0",p:"其他",t:"产品Bug",d:"2025-08-07",c:"左孝先",ds:"dlf sdk报错，新版sdk创建表报错",s:"新版sdk问题，使用旧版openapi"},
+{i:48,e:"E2509235H3MN6H",p:"Spark",t:"产品Bug",d:"2025-09-23",c:"左孝先",ds:"maxcompute spark数据量大时无法正常运行",s:"产品问题，修复时间未定"},
+{i:49,e:"E250814EN3H7FM",p:"Spark",t:"功能缺陷",d:"2025-08-14",c:"左孝先",ds:"Spark 3.4免密访问oss不支持roleArn",s:"Spark 3.4不支持roleArn配置"},
+{i:50,e:"E251114E63SUF5",p:"其他",t:"服务异常",d:"2025-11-14",c:"张凯",ds:"离线任务失败，资源组偶发性异常",s:"资源组偶发性异常导致任务被终止"},
+{i:51,e:"E250825B73NGH3",p:"其他",t:"告警异常",d:"2025-08-25",c:"张凯",ds:"oracle配置报警设置后模拟测试无反应",s:"企业微信webhook接收接口存在问题"},
+{i:52,e:"E2510298746NGZ",p:"DataWorks",t:"功能缺陷",d:"2025-10-29",c:"夏卫涛",ds:"设置默认计算资源但显示其他资源组",s:"产品设计限制，已提交需求"}
+];
+
+const ptag={Hologres:'t-r',DataWorks:'t-b','数据集成':'t-o',MaxCompute:'t-g',Spark:'t-p',PAI:'t-pk',OSS:'t-tl','其他':'t-gr'};
+const ttag={'服务异常':'t-r','产品Bug':'t-o','功能缺陷':'t-b','版本升级':'t-p','告警异常':'t-pk','UI问题':'t-gr'};
+
+let fd=D.slice(),pg=1,ps=15;
+
+function ft(){
+  const p=document.getElementById('fp').value;
+  const ty=document.getElementById('fty').value;
+  const s=document.getElementById('fs').value.toLowerCase();
+  fd=D.filter(r=>{
+    if(p&&r.p!==p)return false;
+    if(ty&&r.t!==ty)return false;
+    if(s&&!r.e.toLowerCase().includes(s)&&!r.ds.toLowerCase().includes(s)&&!r.s.toLowerCase().includes(s))return false;
+    return true;
+  });
+  pg=1;rt();
+}
+function rf(){document.getElementById('fp').value='';document.getElementById('fty').value='';document.getElementById('fs').value='';fd=D.slice();pg=1;rt();}
+
+function rt(){
+  const tb=document.getElementById('tb');
+  const st=(pg-1)*ps,en=Math.min(st+ps,fd.length);
+  const sl=fd.slice(st,en);
+  tb.innerHTML=sl.map((r,i)=>`<tr>
+    <td>${st+i+1}</td>
+    <td style="font-family:monospace;font-size:12px;color:#6b7280">${r.e}</td>
+    <td><span class="tag ${ptag[r.p]||'t-gr'}">${r.p}</span></td>
+    <td><span class="tag ${ttag[r.t]||'t-gr'}">${r.t}</span></td>
+    <td style="white-space:nowrap">${r.d}</td>
+    <td>${r.c}</td>
+    <td class="td-s">${r.ds}</td>
+    <td class="td-s">${r.s}</td>
+  </tr>`).join('');
+  const tp=Math.ceil(fd.length/ps)||1;
+  document.getElementById('pi').textContent=`共 ${fd.length} 条，第 ${pg}/${tp} 页`;
+  const pb=document.getElementById('pb');
+  let h='';
+  for(let i=1;i<=tp;i++){h+=`<button class="pg-b${i===pg?' on':''}" onclick="gp(${i})">${i}</button>`;}
+  pb.innerHTML=h;
+}
+function gp(n){pg=n;rt();}
+
+// Timeline
+function btl(){
+  const ms={};
+  D.forEach(r=>{const m=r.d.substring(0,7);if(!ms[m])ms[m]=[];ms[m].push(r);});
+  const sk=Object.keys(ms).sort().reverse();
+  document.getElementById('tlc').innerHTML=sk.map(m=>`
+    <div class="tl-m">
+      <div class="tl-mt">${m}</div>
+      <div class="tl-is">${ms[m].map(r=>`
+        <div class="tl-i">
+          <div class="tl-d">${r.d.substring(5)}</div>
+          <div class="tl-p"><span class="tag ${ptag[r.p]||'t-gr'}">${r.p}</span></div>
+          <div class="tl-ds">${r.ds} → <span style="color:#6b7280">${r.s}</span></div>
+        </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function stab(t){
+  document.querySelectorAll('.tab-b').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.tc').forEach(c=>c.classList.remove('on'));
+  if(t==='d'){
+    document.querySelectorAll('.tab-b')[0].classList.add('on');
+    document.getElementById('td').classList.add('on');
+  }else{
+    document.querySelectorAll('.tab-b')[1].classList.add('on');
+    document.getElementById('tt').classList.add('on');
+  }
+}
+
+rt();btl();
+</script>
+</body>
+</html>
